@@ -54,94 +54,8 @@ addEventListener('pointermove', (e) => {
 }, { passive: true });
 document.addEventListener('pointerleave', () => (mouse.inside = false));
 
-/* ================= HERO: the name as Ornstein–Uhlenbeck particles =================
-   Every dot follows dX = θ(μ − X)dt + σ dW, where μ is its place in the letters.
-   The cursor adds local volatility; a click is a shock; the name always mean-reverts. */
-const hero = $('.hero'), hc = $('#hero-canvas'), nameEl = $('#hero-name');
-let H = fitCanvas(hc);
-let spikeT = 0;                                    // Konami: market-wide shock
-let P = [];                                        // particles: x, y, tx, ty, gold
-let theta = 0.6, born = 0, shockT = 0;
-const SIG0 = 3, SIG_MOUSE = 260, R_MOUSE = 120;
-function buildTargets() {
-  H = fitCanvas(hc);
-  const hr = hero.getBoundingClientRect(), nr = nameEl.getBoundingClientRect();
-  const fs = parseFloat(getComputedStyle(nameEl).fontSize);
-  const off = document.createElement('canvas'); off.width = Math.ceil(H.w); off.height = Math.ceil(H.h);
-  const o = off.getContext('2d');
-  o.fillStyle = '#fff'; o.textBaseline = 'alphabetic';
-  o.font = `600 ${fs}px "Inter Tight", Inter, sans-serif`;
-  if ('letterSpacing' in o) o.letterSpacing = `${-0.05 * fs}px`;
-  const x0 = nr.left - hr.left, y0 = nr.top - hr.top, lh = parseFloat(getComputedStyle(nameEl).lineHeight) || fs * 0.92;
-  // CSS places the baseline at half-leading + ascent inside each line box: do the same here
-  const m = o.measureText('Nel');
-  const asc = m.fontBoundingBoxAscent || fs * 0.969, desc = m.fontBoundingBoxDescent || fs * 0.242;
-  const base = (lh - (asc + desc)) / 2 + asc;
-  o.fillText('Nel', x0, y0 + base);
-  o.fillText('Dupuij', x0 + fs * 0.32, y0 + lh + base);
-  const step = Math.max(2.5, fs / 46);
-  const data = o.getImageData(0, 0, off.width, off.height).data;
-  const T = [];
-  for (let yy = 0; yy < off.height; yy += step) for (let xx = 0; xx < off.width; xx += step) {
-    const x = Math.round(xx), y = Math.round(yy);
-    if (data[(y * off.width + x) * 4 + 3] > 140) T.push([x + (Math.random() - 0.5) * step * 0.6, y + (Math.random() - 0.5) * step * 0.6]);
-  }
-  const old = P;
-  P = T.map(([tx, ty], i) => {
-    const prev = old[i];
-    return prev ? { x: prev.x, y: prev.y, tx, ty, gold: prev.gold }
-                : { x: Math.random() * H.w, y: Math.random() * H.h, tx, ty, gold: Math.random() < 0.07 };
-  });
-}
-function stepHero(dt) {
-  const { ctx, w, h } = H;
-  if (spikeT > 0) spikeT -= dt;
-  if (shockT > 0) shockT -= dt;
-  theta = Math.min(4.5, theta + dt * 1.8);          // the entrance: mean reversion strengthens as the name forms
-  const hr = { top: 0, left: 0 }, r = hero.getBoundingClientRect();
-  const mx = mouse.x - r.left, my = mouse.y - r.top, mIn = mouse.inside && my > -40 && my < r.height + 40;
-  const extra = spikeT > 0 ? 70 : 0;
-  ctx.clearRect(0, 0, w, h);
-  // exact OU transition over dt (stable whatever the frame rate)
-  const decay = Math.exp(-theta * dt), sdUnit = Math.sqrt((1 - decay * decay) / (2 * theta));
-  ctx.fillStyle = 'rgba(233,236,239,.92)';
-  const golds = [];
-  for (let i = 0; i < P.length; i++) {
-    const p = P[i];
-    let sig = SIG0 + extra;
-    let ax = 0, ay = 0;
-    if (mIn) {
-      const dx = p.x - mx, dy = p.y - my, d = Math.hypot(dx, dy);
-      if (d < R_MOUSE) { const f = 1 - d / R_MOUSE; sig += SIG_MOUSE * f * f; ax = (dx / (d || 1)) * 340 * f; ay = (dy / (d || 1)) * 340 * f; }
-    }
-    p.x = p.tx + (p.x - p.tx) * decay + ax * dt + sig * sdUnit * gauss();
-    p.y = p.ty + (p.y - p.ty) * decay + ay * dt + sig * sdUnit * gauss();
-    if (p.gold) golds.push(p); else ctx.fillRect(p.x, p.y, 1.5, 1.5);
-  }
-  ctx.fillStyle = 'rgba(212,176,106,.95)';
-  for (const p of golds) ctx.fillRect(p.x, p.y, 1.9, 1.9);
-}
-// click anywhere in the hero (not on a button) = a shock that scatters the whole name
-hero.addEventListener('click', (e) => {
-  if (e.target.closest('a,button')) return;
-  const r = hero.getBoundingClientRect(), cx = e.clientX - r.left, cy = e.clientY - r.top;
-  P.forEach((p) => { const dx = p.x - cx, dy = p.y - cy, d = Math.hypot(dx, dy) || 1, k = 180 + 380 / (1 + d / 120); p.x += dx / d * k * (0.4 + Math.random()); p.y += dy / d * k * (0.4 + Math.random()); });
-});
-let targetsQueued = false;
-const queueTargets = () => { if (targetsQueued) return; targetsQueued = true; requestAnimationFrame(() => { targetsQueued = false; buildTargets(); }); };
-addEventListener('resize', queueTargets);
-(document.fonts ? document.fonts.load('600 100px "Inter Tight"').then(() => document.fonts.ready) : Promise.resolve()).then(() => {
-  buildTargets();
-  if (REDUCED) { P.forEach((p) => { p.x = p.tx; p.y = p.ty; }); stepHero(0.016); }
-  else visibleLoop(hero, stepHero);
-});
-
-// called when the intro screen lifts: scatter everything, then let the name mean-revert into place
-function heroEnter() {
-  if (REDUCED) return;
-  P.forEach((p) => { p.x = Math.random() * H.w; p.y = Math.random() * H.h; });
-  theta = 0.25;
-}
+/* ================= HERO ================= */
+const hero = $('.hero');
 
 /* ================= INTRO (spawn) ================= */
 const intro = $('#intro');
@@ -254,7 +168,7 @@ function runIntro() {
       const ty = Math.max(44, y - 16 - (1 - a) * 8);
       ctx.font = '11.5px JetBrains Mono, monospace'; ctx.fillStyle = 'rgba(212,176,106,.9)';
       ctx.fillText(String(p.i + 1).padStart(2, '0'), x, ty - 21);
-      ctx.font = `${near ? 21 : 19}px Instrument Serif, Georgia, serif`; ctx.fillStyle = near ? '#fff' : 'rgba(233,236,239,.92)';
+      ctx.font = `600 ${near ? 18 : 17}px Inter Tight, sans-serif`; ctx.fillStyle = near ? '#fff' : 'rgba(233,236,239,.92)';
       ctx.fillText(p.name, x, ty);
       ctx.textAlign = 'start'; ctx.globalAlpha = 1;
     });
@@ -630,19 +544,12 @@ function drawSpark(S, kind, { a, b }, prog) {
 
 /* ================= easter eggs ================= */
 const toast = (msg) => { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2600); };
-const KON = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
-let kp = 0;
-addEventListener('keydown', (e) => {
-  kp = (e.key === KON[kp] || e.key.toLowerCase() === KON[kp]) ? kp + 1 : (e.key === KON[0] ? 1 : 0);
-  if (kp === KON.length) { kp = 0; spikeT = 4; toast('⚡ vol shock: σ × 15. It still mean-reverts.'); if (lenis) lenis.scrollTo(0); else scrollTo({ top: 0, behavior: 'smooth' }); }
-});
 console.log('%cdS = μS dt + σS dW', 'font:600 16px JetBrains Mono,monospace;color:#d4b06a');
 console.log('%cReading the source? Good instinct. Let\'s talk → nel.dupuij@gmail.com', 'font:13px Inter Tight,sans-serif;color:#8b93a1');
 
 /* ================= boot ================= */
 runIntro().then(() => {
   document.body.classList.add('ready');
-  heroEnter();
   onScroll(scrollY);
 });
 })();
