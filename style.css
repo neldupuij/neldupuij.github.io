@@ -93,7 +93,7 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:90;opa
 .hero-name .row{display:block}
 .hero-name .italic{font-style:normal;padding-left:.32em}
 .hero-name .ch{display:inline-block;will-change:transform}
-.hero-name{color:rgba(233,236,239,.06);position:relative;z-index:1}
+.hero-name{color:var(--text);position:relative;z-index:1}
 .hero-name ::selection{color:transparent}
 .hero-role{font-size:clamp(17px,2vw,21px);color:var(--muted);max-width:560px;margin:0 0 30px}
 .scramble{color:var(--text);font-family:var(--mono);font-size:.9em}
