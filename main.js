@@ -140,9 +140,12 @@ function runIntro() {
   addEventListener('resize', () => { S = fitCanvas(c); grow(off + HEAD()); });
   c.addEventListener('pointermove', (e) => { mx = e.clientX - c.getBoundingClientRect().left; });
   c.addEventListener('pointerleave', () => (mx = -1));
+  c.addEventListener('pointerdown', (e) => { mx = e.clientX - c.getBoundingClientRect().left; });
+  c.addEventListener('pointerup', () => (mx = -1));
   const draw = (dt, now) => {
     const { ctx, w, h } = S;
-    off += dt * (mx >= 0 ? 40 : 200);
+    const speed = clamp(S.w * 0.15, 50, 200);            // ~55 px/s on a phone, 150-200 on desktop
+    off += dt * (mx >= 0 ? speed * 0.2 : speed);
     grow(off + HEAD());
     ctx.clearRect(0, 0, w, h);
     const g = ctx.createLinearGradient(0, 40, 0, h); g.addColorStop(0, 'rgba(233,236,239,.07)'); g.addColorStop(1, 'rgba(233,236,239,0)');
