@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nel Dupuij — Quantitative Research</title>
+<meta name="description" content="Nel Dupuij — M2 Data Science at École Polytechnique, M.Eng. Financial Engineering at ESILV. Quantitative research, trading and market making.">
+<meta name="theme-color" content="#07090c">
+<meta property="og:title" content="Nel Dupuij — Quantitative Research">
+<meta property="og:description" content="M2 Data Science (École Polytechnique) · M.Eng. Financial Engineering (ESILV). Available from April 2027 for internships in quantitative research, trading or market making.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://neldupuij.github.io/">
+<meta property="og:image" content="https://neldupuij.github.io/assets/network-covid.jpg">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%2307090c'/><path d='M4 20 L8 17 L11 19 L14 12 L17 15 L20 9 L23 13 L26 7 L28 10' fill='none' stroke='%23d4b06a' stroke-width='2.4' stroke-linejoin='round' stroke-linecap='round'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=28">
+</head>
+<body>
+
+<!-- ============ INTRO / SPAWN ============ -->
+<div class="intro" id="intro" aria-hidden="true">
+  <canvas id="intro-canvas"></canvas>
+  <div class="intro-hud">
+    <div class="intro-line"><span class="k">engine</span> monte-carlo · euler–maruyama</div>
+    <div class="intro-line"><span class="k">model</span> dS<sub>t</sub> = μS<sub>t</sub>dt + σS<sub>t</sub>dW<sub>t</sub></div>
+    <div class="intro-line"><span class="k">paths</span> <span id="intro-count">0</span> / 10 000</div>
+    <div class="intro-line"><span class="k">status</span> <span id="intro-status">simulating…</span></div>
+  </div>
+  <button class="intro-skip" id="intro-skip">skip ↵</button>
+</div>
+
+<!-- ============ PROGRESS ============ -->
+<div class="progress"><div class="progress-bar" id="progress-bar"></div><span class="progress-t" id="progress-t">t = 0.00 T</span></div>
+
+<!-- ============ NAV ============ -->
+<header class="nav" id="nav">
+  <a href="#top" class="nav-brand" data-hover>N<span>·</span>D</a>
+  <nav class="nav-links">
+    <a href="#experience" data-hover>Experience</a>
+    <a href="#research" data-hover>Research</a>
+    <a href="#projects" data-hover>Projects</a>
+    <a href="#education" data-hover>Education</a>
+    <a href="#contact" data-hover>Contact</a>
+  </nav>
+  <a href="Nel_Dupuij_CV.pdf" class="nav-cv magnetic" download data-hover data-cursor-label="pdf">CV ↓</a>
+</header>
+
+<main>
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="top">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-content">
+    <p class="eyebrow mono reveal-hero"><span class="dot"></span>S<sub>0</sub> — Paris · Available April 2027</p>
+    <h1 class="hero-name" id="hero-name" aria-label="Nel Dupuij"><span class="row">Nel</span><span class="row italic">Dupuij</span></h1>
+    <p class="hero-role reveal-hero">M2 Data Science at École Polytechnique.<br>Experience in eFX execution and derivatives analytics.</p>
+    <div class="hero-cta reveal-hero">
+      <a href="#projects" class="btn btn-primary" data-hover>View projects</a>
+      <a href="Nel_Dupuij_CV.pdf" class="btn" download data-hover>Download CV ↓</a>
+    </div>
+  </div>
+  <div class="hero-hint mono reveal-hero" aria-hidden="true">each dot: dX = θ(μ − X)dt + σdW · move the mouse to add volatility · click for a shock</div>
+  <div class="scroll-cue mono" aria-hidden="true"><span>scroll</span><i></i></div>
+</section>
+
+<!-- ============ TICKER ============ -->
+<div class="ticker" aria-label="Courses: Stochastic Calculus, Monte Carlo Methods, Sequential Monte Carlo, Derivatives Pricing & Hedging, Deep Learning for Time Series, Hidden Markov Models, Market Risk, Econometrics, Optimization for Data Science">
+  <canvas id="ticker-canvas" aria-hidden="true"></canvas>
+  <p class="ticker-label mono">Relevant<br>coursework</p>
+</div>
+
+<!-- ============ ABOUT / STATS ============ -->
+<section class="section about" id="about">
+  <div class="wrap about-grid">
+    <figure class="portrait" data-reveal data-hover>
+      <div class="portrait-frame"><img src="assets/portrait.jpg" alt="Portrait of Nel Dupuij" width="720" height="900" loading="lazy"></div>
+      <figcaption class="mono">S<sub>0</sub> · Nel Dupuij · Paris</figcaption>
+    </figure>
+    <div class="about-text">
+      <p class="label mono" data-reveal>§1 — Prior</p>
+      <h2 class="big" data-reveal>Final-year Financial Engineering student pursuing an M2 in Data Science at École Polytechnique, with experience in eFX execution analysis, derivatives analytics and quantitative research.</h2>
+      <div class="about-links" data-reveal>
+        <a class="btn magnetic" href="https://www.linkedin.com/in/nel-dupuij-aa10a5177" target="_blank" rel="noopener" data-hover>LinkedIn ↗</a>
+        <a class="btn magnetic" href="https://github.com/neldupuij" target="_blank" rel="noopener" data-hover>GitHub ↗</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ EXPERIENCE ============ -->
+<section class="section" id="experience">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="label mono" data-reveal>§2 — Filtration 𝓕<sub>t</sub></p>
+      <h2 class="title" data-reveal>Experience</h2>
+    </div>
+    <div class="timeline">
+      <svg class="timeline-path" id="timeline-path" preserveAspectRatio="none" aria-hidden="true"><path/></svg>
+
+      <article class="tl-item" data-reveal>
+        <div class="tl-meta mono"><span>Apr – Aug 2026</span><span>London</span></div>
+        <div class="tl-body">
+          <h3>Makor Securities</h3>
+          <p class="tl-role">Quantitative Analyst Intern</p>
+          <ul>
+            <li>Analysed eFX execution data to assess client toxicity, routing performance and trading impact.</li>
+            <li>Built a monitoring platform for EURO STOXX 50 Total Return Futures, covering trades, liquidity, spread decomposition, consistency checks and automated reporting.</li>
+            <li>Developed Python tools and Bloomberg-based analytics for event-driven, derivatives and electronic trading desks.</li>
+            <li>Automated monitoring of overnight Asian markets, commodities and financial news for trading desks.</li>
+          </ul>
+          <div class="chips"><span>eFX</span><span>TRF</span><span>Bloomberg</span><span>Python</span></div>
+        </div>
+      </article>
+
+      <article class="tl-item" data-reveal>
+        <div class="tl-meta mono"><span>Jun – Aug 2025</span><span>Paris</span></div>
+        <div class="tl-body">
+          <h3>Ermes</h3>
+          <p class="tl-role">Data Analyst / Data Engineer Intern</p>
+          <ul>
+            <li>Built Python automation pipelines and statistical models for marketing mix modelling, ROI measurement, customer segmentation and latency analysis.</li>
+            <li>Developed Python and SQL workflows for data processing, client analytics and automated reporting.</li>
+          </ul>
+          <div class="chips"><span>MMM</span><span>SQL</span><span>Pipelines</span></div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ RESEARCH ============ -->
+<section class="section research" id="research">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="label mono" data-reveal>§3 — Spillovers</p>
+      <h2 class="title" data-reveal>Research</h2>
+    </div>
+
+    <div class="paper" data-reveal>
+      <div class="paper-text">
+        <p class="paper-kicker mono">Working paper · October 2026 · with Prof. Duc Thi Luu</p>
+        <h3 class="paper-title">Volatility Spillovers and Connectedness Across Equities of European Financial Institutions</h3>
+        <p class="paper-abs">How do volatility shocks travel through Europe's banking system? Using the Diebold–Yilmaz framework (rolling VAR + generalized FEVD), we measure total, directional and net spillovers across listed banks, insurers and financial firms, benchmark them against DCC-GARCH and MST correlation networks, and zoom in on country-level connectedness.</p>
+        <ul class="paper-findings">
+          <li><b>Persistently high</b> system-wide connectedness, with a sharp jump during COVID-19.</li>
+          <li>Post-COVID connectedness <b>stays above pre-2019 levels</b> — a structural rewiring of long-run linkages.</li>
+          <li>Institutions <b>switch roles</b> between emitter and receiver across frequency bands.</li>
+          <li>A <b>core–periphery</b> hierarchy between national banking systems.</li>
+        </ul>
+        <p class="paper-venue mono">Presented at FMND 2026 — 10th International Workshop on Financial Markets and Nonlinear Dynamics, Paris · also served as paper discussant</p>
+        <div class="paper-cta">
+          <a class="btn btn-primary magnetic" href="Volatility_Spillovers_Dupuij_Luu.pdf" target="_blank" rel="noopener" data-hover data-cursor-label="pdf">Read the paper (PDF)</a>
+          <a class="btn magnetic" href="https://github.com/neldupuij/Research" target="_blank" rel="noopener" data-hover data-cursor-label="code">Code</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="figs">
+      <figure class="fig" data-reveal>
+        <div class="fig-head">
+          <p class="fig-title">VAR–DY Total Connectedness Index</p>
+          <p class="fig-read mono" id="tci-read">hover the curve</p>
+        </div>
+        <canvas id="tci-canvas" role="img" aria-label="Total Connectedness Index from 2016 to 2026: around 86–88% before 2020, jumping to about 95% during COVID, then settling near 92%"></canvas>
+        <figcaption class="mono">Fig. 1 — share of forecast-error variance explained by shocks to <i>other</i> institutions (%). Data read from the paper's figure.</figcaption>
+      </figure>
+      <figure class="fig" data-reveal>
+        <div class="fig-head">
+          <p class="fig-title">VAR–DY Spillover Network</p>
+          <div class="tabs mono" id="net-tabs">
+            <button data-p="0" data-hover>Pre-COVID<span>2010–2019</span></button>
+            <button data-p="1" data-hover>COVID<span>2020–mid-2023</span></button>
+            <button data-p="2" data-hover>Post-COVID<span>Jul 2023–2024</span></button>
+          </div>
+        </div>
+        <canvas id="net2-canvas" role="img" aria-label="Spillover network of 63 European banks, changing between the pre-COVID, COVID and post-COVID periods"></canvas>
+        <figcaption class="mono"><span class="leg leg-r"></span>net emitter <span class="leg leg-b"></span>net receiver · size = total strength · hover a bank · Figs. 2–4: positions, colours and sizes read from the paper's figures, links indicative</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PROJECTS ============ -->
+<section class="section" id="projects">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="label mono" data-reveal>§4 — Sample paths</p>
+      <h2 class="title" data-reveal>Selected projects</h2>
+    </div>
+    <div class="cards">
+      <a class="card" href="projects/crypto.html" data-reveal data-hover>
+        <canvas class="spark" data-kind="leadlag"></canvas>
+        <p class="card-k mono">01 · q/kdb+ · Python · 2026</p>
+        <h3>Crypto Market Microstructure</h3>
+        <p>Date-partitioned kdb+ database of Binance spot/perpetual trades, funding events and order books. Perpetual trade prices lead spot on each of 8 days studied; funding effect not replicated; USDC→BTC routing costs measured second by second.</p>
+        <p class="card-nod mono">results, charts & code →</p>
+      </a>
+      <a class="card" href="Natural_Gas_Pairs_Trading_Dupuij.pdf" target="_blank" rel="noopener" data-reveal data-hover data-cursor-label="pdf">
+        <canvas class="spark" data-kind="ou"></canvas>
+        <p class="card-k mono">02 · Python · Systematic trading · 2026</p>
+        <h3>Natural Gas Statistical Arbitrage</h3>
+        <p>Regime-aware pairs trading between natural gas futures (NG=F) and energy equities: cointegration screening, z-score signals, gradual sizing and a trailing stop. Walk-forward test windows <b>2022–2025</b> (3-year train / 1-year test), net of <b>10 bps</b> per trade: Sharpe <b>0.90</b>, max drawdown <b>13.1%</b>.</p>
+        <p class="card-nod mono">read the report (PDF) →</p>
+      </a>
+      <a class="card" href="https://github.com/neldupuij/wallet_application" target="_blank" rel="noopener" data-reveal data-hover data-cursor-label="repo">
+        <canvas class="spark" data-kind="gbm"></canvas>
+        <p class="card-k mono">03 · Python · Streamlit · Linux</p>
+        <h3>Wallet Application</h3>
+        <p>Streamlit dashboard: single-asset backtests (momentum, ARIMA), multi-asset portfolio simulation and an automated daily report via cron.</p>
+        <p class="card-nod mono">view repository →</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ EDUCATION ============ -->
+<section class="section" id="education">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="label mono" data-reveal>§5 — Training set</p>
+      <h2 class="title" data-reveal>Education</h2>
+    </div>
+    <div class="edu">
+      <article class="edu-item" data-reveal data-hover>
+        <p class="edu-y mono">2026 — 2027</p>
+        <h3>École Polytechnique</h3>
+        <p class="edu-d">M2 Data Science — Applied Mathematics &amp; Statistics<br><span class="muted">Institut Polytechnique de Paris</span></p>
+        <p class="edu-c">Monte Carlo Methods &amp; Approximate Inference · HMMs &amp; Sequential Monte Carlo · Nonparametric Estimation · Optimization for Data Science · Deep Learning for Time Series · Machine Learning</p>
+      </article>
+      <article class="edu-item" data-reveal data-hover>
+        <p class="edu-y mono">2024 — 2027</p>
+        <h3>ESILV</h3>
+        <p class="edu-d">M.Eng. Financial Engineering — Research Track<br><span class="muted">Paris-La Défense</span></p>
+        <p class="edu-c"><b>1st</b> in Advanced Probability<br>Stochastic Calculus · Derivatives Pricing &amp; Hedging · ML for Asset Management · Market Risk · Econometrics · C++ &amp; Python for Finance</p>
+      </article>
+      <article class="edu-item" data-reveal data-hover>
+        <p class="edu-y mono">2021 — 2023</p>
+        <h3>Lycée Chaptal</h3>
+        <p class="edu-d">Classes Préparatoires MPSI–MP<br><span class="muted">Paris</span></p>
+        <p class="edu-c">Intensive training in mathematics, physics and computer science.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SKILLS ============ -->
+<section class="section" id="skills">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="label mono" data-reveal>§6 — Feature space</p>
+      <h2 class="title" data-reveal>Skills</h2>
+    </div>
+    <dl class="skills">
+      <div data-reveal><dt class="mono">Programming</dt><dd>Python, C++, SQL, q/kdb+, Git, Linux · pandas, NumPy, SciPy, scikit-learn</dd></div>
+      <div data-reveal><dt class="mono">Quant methods</dt><dd>Probability, Statistics, Time Series, Econometrics, Optimization, Stochastic Processes</dd></div>
+      <div data-reveal><dt class="mono">Markets</dt><dd>eFX Execution Analysis, Systematic Strategies, Statistical Arbitrage, Derivatives, Total Return Futures</dd></div>
+      <div data-reveal><dt class="mono">Tools</dt><dd>Bloomberg, Excel, Streamlit, Jupyter, LaTeX</dd></div>
+      <div data-reveal><dt class="mono">Languages</dt><dd>French (native), English (fluent), Italian (intermediate)</dd></div>
+    </dl>
+  </div>
+</section>
+
+<!-- ============ CONTACT ============ -->
+<section class="section contact" id="contact">
+  <canvas id="contact-canvas"></canvas>
+  <div class="wrap">
+    <p class="label mono" data-reveal>§7 — Terminal value</p>
+    <h2 class="contact-title" data-reveal>Get in touch.</h2>
+    <p class="contact-sub" data-reveal>Looking for an internship in quantitative research, trading or market making from April 2027.</p>
+    <div class="contact-links" data-reveal>
+      <a class="btn btn-primary btn-lg magnetic" href="mailto:nel.dupuij@gmail.com" data-hover data-cursor-label="mail">nel.dupuij@gmail.com</a>
+      <a class="btn btn-lg magnetic" href="https://www.linkedin.com/in/nel-dupuij-aa10a5177" target="_blank" rel="noopener" data-hover>LinkedIn ↗</a>
+      <a class="btn btn-lg magnetic" href="https://github.com/neldupuij" target="_blank" rel="noopener" data-hover>GitHub ↗</a>
+      <a class="btn btn-lg magnetic" href="Nel_Dupuij_CV.pdf" download data-hover data-cursor-label="pdf">CV (PDF) ↓</a>
+    </div>
+  </div>
+  <footer class="foot mono">
+    <span>© 2026 Nel Dupuij</span>
+    <span>↑↑↓↓←→←→BA</span>
+  </footer>
+</section>
+
+</main>
+
+<div class="toast mono" id="toast"></div>
+
+<script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+<script src="main.js?v=27"></script>
+</body>
+</html>

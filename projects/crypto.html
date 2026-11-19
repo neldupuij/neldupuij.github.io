@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crypto Market Microstructure in kdb+/q — Nel Dupuij</title>
+<meta name="description" content="Where does the price of Bitcoin form? Lead-lag between Binance spot and perpetual, funding flows and USDC→BTC routing, studied in kdb+/q.">
+<meta name="theme-color" content="#07090c">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%2307090c'/><path d='M4 20 L8 17 L11 19 L14 12 L17 15 L20 9 L23 13 L26 7 L28 10' fill='none' stroke='%23d4b06a' stroke-width='2.4' stroke-linejoin='round' stroke-linecap='round'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css?v=26">
+<style>
+.pj{max-width:980px;margin:0 auto;padding:110px 28px 80px}
+.pj-back{font:13px var(--mono);color:var(--muted)}
+.pj-back:hover{color:var(--text)}
+.pj h1{font-family:var(--sans);font-weight:600;font-size:clamp(38px,6vw,72px);line-height:1;letter-spacing:-.045em;margin:28px 0 16px}
+.pj-sub{font-size:19px;color:var(--muted);max-width:720px;margin:0 0 22px}
+.pj-meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:34px}
+.pj-meta span{font:12.5px var(--mono);color:var(--muted);border:1px solid var(--line2);padding:4px 10px;border-radius:999px}
+.pj-short{border:1px solid var(--line);border-radius:20px;padding:24px 28px;background:var(--bg2);margin-bottom:56px}
+.pj-short h2{font:500 13px var(--mono);color:var(--accent);margin:0 0 12px;text-transform:uppercase;letter-spacing:.06em}
+.pj-short li{margin:8px 0;color:#c9ced6}
+.pj-short b{color:var(--text);font-weight:500}
+.pj section{padding:0 0 56px;border:0}
+.pj h2.h{font-family:var(--sans);font-weight:600;font-size:clamp(26px,3.4vw,38px);letter-spacing:-.03em;margin:0 0 18px}
+.pj h2.h small{font:13px var(--mono);color:var(--accent);margin-right:12px;letter-spacing:0}
+.pj dl{display:grid;grid-template-columns:120px 1fr;gap:10px 22px;margin:0 0 26px}
+.pj dt{font:13px var(--mono);color:var(--faint);padding-top:3px}
+.pj dd{margin:0;color:#c9ced6}
+.chart{border:1px solid var(--line);border-radius:18px;background:#05070a;margin:0 0 18px;overflow:hidden}
+.chart-h{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;padding:16px 20px 0}
+.chart-h b{font-weight:600;font-size:17px}
+.chart-h span{font:12.5px var(--mono);color:var(--muted)}
+.chart canvas{display:block;width:100%;height:300px}
+.chart p{font:12.5px var(--mono);color:var(--faint);margin:0;padding:10px 20px 14px;border-top:1px solid var(--line);line-height:1.6}
+.limits{border-left:2px solid var(--line2);padding:4px 0 4px 18px;margin:18px 0 0;color:var(--muted);font-size:15px}
+.limits b{color:var(--text);font-weight:500}
+table.t{width:100%;border-collapse:collapse;font:13px var(--mono);margin:6px 0 10px}
+table.t th,table.t td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+table.t th:first-child,table.t td:first-child{text-align:left}
+table.t th{color:var(--muted);font-weight:500}
+table.t td{color:#c9ced6}
+.tw{overflow-x:auto}
+.note{font:12.5px var(--mono);color:var(--faint);line-height:1.6;margin:0 0 18px}
+.pj-cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}
+@media (max-width:640px){.pj{padding:90px 18px 60px}.pj dl{grid-template-columns:1fr;gap:2px 0}.pj dd{margin-bottom:10px}.chart canvas{height:240px}}
+</style>
+</head>
+<body>
+<header class="nav" id="nav">
+  <a href="../index.html" class="nav-brand">N<span>·</span>D</a>
+  <nav class="nav-links">
+    <a href="../index.html#projects">Projects</a>
+    <a href="../index.html#research">Research</a>
+    <a href="../index.html#contact">Contact</a>
+  </nav>
+  <a href="../Nel_Dupuij_CV.pdf" class="nav-cv" download>CV ↓</a>
+</header>
+
+<main class="pj">
+  <a class="pj-back" href="../index.html#projects">← back to projects</a>
+  <h1>Crypto market microstructure in kdb+/q</h1>
+  <p class="pj-sub">Where does the price of Bitcoin form, and what does it mean for a market maker? Three studies on Binance data: spot vs. perpetual lead-lag, flows around funding payments, and USDC → BTC routing costs.</p>
+  <div class="pj-meta"><span>q / kdb+</span><span>Python</span><span>Binance aggTrades</span><span>Tardis order books</span><span>Nov 2026</span></div>
+
+  <div class="pj-short">
+    <h2>In short</h2>
+    <ul>
+      <li><b>Lead-lag.</b> Over 1–8 November 2026, perpetual BTCUSDT trade prices move before spot ones on every one of the 8 days (lead-lag ratio 2.5–5.1 at 100 ms). Observed on trade prices; not a demonstrated exploitable opportunity at a few milliseconds.</li>
+      <li><b>Funding.</b> The exploratory October effect did not replicate under a frozen protocol: 0 replications out of 5, no contradiction, differences of +0.01 to +0.25 bp with every 95% interval containing 0.</li>
+      <li><b>Routing.</b> Without fees, the indirect route USDC → USDT → BTC is cheaper by under 1 bp at the median (1 and 5 BTC). At 1 bp per trade the median turns negative; at 10 bp no gain is observed that day.</li>
+    </ul>
+  </div>
+
+  <section>
+    <h2 class="h"><small>01</small>Spot vs. perpetual: who moves first?</h2>
+    <dl>
+      <dt>Question</dt><dd>Between Binance BTCUSDT spot and USD-M perpetual trade prices, which one changes first?</dd>
+      <dt>Data</dt><dd>Binance aggregated trades, 1–8 November 2026, loaded into a date-partitioned kdb+ HDB.</dd>
+      <dt>Method</dt><dd>Prices on a time grid (last trade at or before each step, via as-of join); cross-correlation of returns at 100 ms and 10 ms; lead-lag ratio = Σcorr² for perp-leads lags ÷ Σcorr² for spot-leads lags; event study around large jumps (&gt; 3 bp in 10 ms, at least 1 s apart).</dd>
+    </dl>
+
+    <div class="chart">
+      <div class="chart-h"><b>Cross-correlation of returns, 10 ms grid</b><span id="c1-read">8 Nov 2026 · hover a bar</span></div>
+      <canvas id="c1"></canvas>
+      <p>corr(perp return at t, spot return at t + lag). Positive lags = perp moves first. The contemporaneous bar (lag 0) is the largest; the right side dominates the left.</p>
+    </div>
+
+    <div class="chart">
+      <div class="chart-h"><b>Lead-lag ratio, day by day</b><span id="c2-read">ratio &gt; 1 ⇒ perp leads</span></div>
+      <canvas id="c2"></canvas>
+      <p>Each of the 8 days, at both resolutions, the ratio is above 1: 2.5–5.1 at 100 ms, 2.7–7.3 at 10 ms. Most co-movement is still contemporaneous at 100 ms (correlation 0.63–0.70).</p>
+    </div>
+
+    <div class="chart">
+      <div class="chart-h"><b>Event study: average path after a perpetual jump</b><span id="c3-read">8 days · 567 perp jumps</span></div>
+      <canvas id="c3"></canvas>
+      <p>Signed move in bp relative to the price just before the jump, averaged over events. The spot catches up mostly within the first tens of milliseconds.</p>
+    </div>
+
+    <div class="limits">
+      <b>Limits.</b> Last-trade prices: the market that trades less often looks mechanically "late", which can inflate the ratio. Spot and perpetual run on separate matching engines and millisecond timestamp alignment was not verified. No latency, fees or executable prices: this is not a demonstrated trading opportunity. Eight consecutive days, one instrument, one venue.
+    </div>
+  </section>
+
+  <section>
+    <h2 class="h"><small>02</small>Flows around funding payments</h2>
+    <dl>
+      <dt>Question</dt><dd>Do 8-hourly funding payments come with flows consistent with position unwinding, and with a measurable price move?</dd>
+      <dt>Method</dt><dd>Exploration on BTCUSDT, October 2026, then a frozen replication protocol (SHA fingerprint kept) applied unchanged to 5 new samples. ±60 min windows vs. placebo hours, day-level bootstrap.</dd>
+    </dl>
+    <div class="tw"><table class="t">
+      <tr><th>Sample</th><th>Basis effect, payment − placebo</th><th>95% CI</th><th>Verdict</th></tr>
+      <tr><td>BTC Oct (exploratory)</td><td>+0.29 bp</td><td>[0.05; 0.52]</td><td>exploratory</td></tr>
+      <tr><td>BTC Aug</td><td>+0.01 bp</td><td>[−0.30; 0.34]</td><td>inconclusive</td></tr>
+      <tr><td>BTC Sep</td><td>+0.04 bp</td><td>[−0.21; 0.29]</td><td>inconclusive</td></tr>
+      <tr><td>ETH Aug</td><td>+0.15 bp</td><td>[−0.08; 0.39]</td><td>inconclusive</td></tr>
+      <tr><td>ETH Sep</td><td>+0.25 bp</td><td>[−0.03; 0.53]</td><td>inconclusive</td></tr>
+      <tr><td>ETH Oct</td><td>+0.02 bp</td><td>[−0.26; 0.27]</td><td>inconclusive</td></tr>
+    </table></div>
+    <p class="note">Not replicated: 0 of 5, no contradiction. +0.10 bp on average ≈ 10 USD per million of notional. The funding rate itself is well estimated one hour ahead (correlation 0.96), which says nothing about a price move. Funding stayed between −1.4 and +1 bp per 8 h: the high-funding regime is not covered.</p>
+  </section>
+
+  <section>
+    <h2 class="h"><small>03</small>USDC → BTC: direct or via USDT?</h2>
+    <dl>
+      <dt>Question</dt><dd>For the same net amount of BTC, is USDC → USDT → BTC cheaper than USDC → BTC?</dd>
+      <dt>Method</dt><dd>Tardis 25-level order books of the three pairs on 1 November 2026 (MD5-checked). One decision per second (86,399), as-of join on arrival time, market orders walked through visible levels, fees taken in the received currency, Binance tick sizes and minimums. No 1 USDC = 1 USDT assumption (the rate moved between 1.00094 and 1.00126). Rules written before any computation.</dd>
+    </dl>
+    <div class="tw"><table class="t">
+      <tr><th>Size</th><th>No fees</th><th>1 bp / trade</th><th>10 bp / trade</th><th>Comparable seconds</th></tr>
+      <tr><td>0.01 BTC</td><td>−0.18 bp (38%)</td><td>−1.19 bp (5%)</td><td>−10.21 bp (0%)</td><td>100%</td></tr>
+      <tr><td>0.1 BTC</td><td>−0.17 bp (39%)</td><td>−1.17 bp (5%)</td><td>−10.18 bp (0%)</td><td>100%</td></tr>
+      <tr><td>1 BTC</td><td>+0.19 bp (61%)</td><td>−0.81 bp (13%)</td><td>−9.82 bp (0%)</td><td>83%</td></tr>
+      <tr><td>5 BTC</td><td>+0.74 bp (91%)</td><td>−0.26 bp (33%)</td><td>−9.26 bp (0%)</td><td>23%</td></tr>
+    </table></div>
+    <p class="note">Median saving in bp (positive = indirect route cheaper) and, in brackets, the share of seconds where the indirect route is cheaper, among seconds where both routes can be evaluated. Fee levels are scenarios (historical tiers not verified). All savings are estimated on observed books, not executable: the book can move before the order arrives, and the two legs of the indirect route are not atomic.</p>
+  </section>
+
+  <section>
+    <h2 class="h"><small>04</small>Stack</h2>
+    <p style="color:#c9ced6;margin:0 0 20px;max-width:760px">Core computations in q: date-partitioned HDB, as-of joins, order-book level walks, day-level bootstrap. Python for downloads and charts.</p>
+    <div class="pj-cta">
+      <a class="btn btn-primary" href="https://github.com/neldupuij/crypto-price-discovery-kdb" target="_blank" rel="noopener">Code on GitHub ↗</a>
+      <a class="btn" href="../index.html#projects">Other projects</a>
+    </div>
+  </section>
+</main>
+
+<script>window.CRYPTO={"ll10":[[-500,0.01378],[-490,-0.01746],[-480,0.02318],[-470,-0.00525],[-460,-0.0036],[-450,-0.00625],[-440,0.02496],[-430,-0.02127],[-420,0.02145],[-410,-0.00981],[-400,0.00686],[-390,-0.01583],[-380,0.01866],[-370,0.00081],[-360,-0.00322],[-350,0.0017],[-340,-0.00118],[-330,-0.00142],[-320,0.00387],[-310,0.00066],[-300,-0.0013],[-290,-0.00446],[-280,1e-05],[-270,-0.00289],[-260,-0.00925],[-250,0.00242],[-240,0.00395],[-230,0.01051],[-220,-0.02404],[-210,0.00521],[-200,-0.00978],[-190,0.01118],[-180,-0.00558],[-170,0.0155],[-160,-0.01877],[-150,0.01063],[-140,-0.00174],[-130,0.00743],[-120,-0.01977],[-110,0.00217],[-100,0.00099],[-90,0.03111],[-80,-0.01884],[-70,0.03467],[-60,0.00814],[-50,0.01482],[-40,-0.00511],[-30,0.02841],[-20,0.01867],[-10,0.05743],[0,0.18578],[10,0.15709],[20,0.03712],[30,0.04198],[40,0.02746],[50,0.02319],[60,0.00131],[70,0.0346],[80,0.02949],[90,0.0039],[100,0.02636],[110,0.02621],[120,-0.00724],[130,0.00683],[140,0.01342],[150,0.01543],[160,-0.0186],[170,0.00879],[180,0.00482],[190,0.023],[200,-0.00555],[210,-0.00133],[220,0.00373],[230,-0.01411],[240,0.00055],[250,0.01415],[260,0.00778],[270,-0.0204],[280,0.00865],[290,0.00394],[300,0.00302],[310,-0.01009],[320,0.0032],[330,-0.00324],[340,0.00705],[350,-0.00227],[360,0.01838],[370,-0.00291],[380,-0.00735],[390,-0.00429],[400,-0.00169],[410,-0.0036],[420,-0.01035],[430,0.02907],[440,-0.00809],[450,-0.01518],[460,0.02113],[470,-0.02092],[480,0.01425],[490,0.0047],[500,0.00241]],"md":[{"d":"11-01","r100":4.99,"r10":7.33,"c0":0.694},{"d":"11-02","r100":2.54,"r10":2.75,"c0":0.655},{"d":"11-03","r100":3.04,"r10":2.89,"c0":0.628},{"d":"11-04","r100":3.86,"r10":3.43,"c0":0.671},{"d":"11-05","r100":3.91,"r10":2.74,"c0":0.66},{"d":"11-06","r100":2.59,"r10":2.79,"c0":0.649},{"d":"11-07","r100":5.12,"r10":3.79,"c0":0.639},{"d":"11-08","r100":2.86,"r10":2.93,"c0":0.701}],"ep":[[-200,-0.197,-0.52],[-190,-0.184,-0.518],[-180,-0.206,-0.513],[-170,-0.227,-0.525],[-160,-0.249,-0.547],[-150,-0.257,-0.544],[-140,-0.241,-0.544],[-130,-0.231,-0.522],[-120,-0.254,-0.554],[-110,-0.237,-0.532],[-100,-0.257,-0.501],[-90,-0.2,-0.499],[-80,-0.201,-0.479],[-70,-0.189,-0.459],[-60,-0.135,-0.442],[-50,-0.135,-0.427],[-40,-0.129,-0.39],[-30,-0.143,-0.345],[-20,-0.104,-0.325],[-10,0.0,0.0],[0,4.527,1.475],[10,4.024,2.97],[20,4.306,3.177],[30,4.378,3.32],[40,4.343,3.343],[50,4.222,3.366],[60,4.263,3.368],[70,4.261,3.365],[80,4.2,3.361],[90,4.166,3.352],[100,4.165,3.372],[110,4.135,3.375],[120,4.168,3.345],[130,4.119,3.344],[140,4.103,3.37],[150,4.056,3.365],[160,4.087,3.371],[170,4.069,3.373],[180,4.095,3.376],[190,4.049,3.387],[200,4.109,3.39],[210,4.147,3.406],[220,4.156,3.435],[230,4.152,3.458],[240,4.215,3.466],[250,4.183,3.506],[260,4.209,3.497],[270,4.237,3.518],[280,4.253,3.563],[290,4.268,3.561],[300,4.258,3.557],[310,4.255,3.554],[320,4.236,3.572],[330,4.207,3.574],[340,4.25,3.576],[350,4.26,3.579],[360,4.243,3.585],[370,4.238,3.596],[380,4.269,3.565],[390,4.248,3.583],[400,4.258,3.58],[410,4.211,3.569],[420,4.226,3.604],[430,4.236,3.611],[440,4.206,3.609],[450,4.282,3.642],[460,4.253,3.643],[470,4.274,3.638],[480,4.228,3.65],[490,4.226,3.66],[500,4.254,3.669],[510,4.285,3.643],[520,4.232,3.654],[530,4.272,3.677],[540,4.241,3.663],[550,4.237,3.672],[560,4.244,3.664],[570,4.232,3.633],[580,4.214,3.631],[590,4.264,3.632],[600,4.241,3.62],[610,4.204,3.608],[620,4.187,3.622],[630,4.244,3.641],[640,4.191,3.639],[650,4.189,3.634],[660,4.179,3.619],[670,4.174,3.622],[680,4.146,3.597],[690,4.127,3.589],[700,4.163,3.63],[710,4.185,3.664],[720,4.137,3.697],[730,4.199,3.67],[740,4.196,3.677],[750,4.19,3.66],[760,4.138,3.659],[770,4.166,3.638],[780,4.173,3.64],[790,4.181,3.619],[800,4.172,3.633],[810,4.2,3.639],[820,4.228,3.677],[830,4.201,3.664],[840,4.186,3.681],[850,4.19,3.688],[860,4.202,3.654],[870,4.197,3.665],[880,4.171,3.64],[890,4.191,3.677],[900,4.218,3.673],[910,4.169,3.646],[920,4.156,3.649],[930,4.2,3.633],[940,4.218,3.651],[950,4.199,3.639],[960,4.162,3.631],[970,4.12,3.606],[980,4.148,3.614],[990,4.122,3.635],[1000,4.107,3.614]],"es":[[-200,-1.582,-0.284],[-190,-1.575,-0.295],[-180,-1.597,-0.3],[-170,-1.585,-0.317],[-160,-1.597,-0.311],[-150,-1.571,-0.332],[-140,-1.541,-0.317],[-130,-1.496,-0.301],[-120,-1.475,-0.29],[-110,-1.431,-0.269],[-100,-1.418,-0.261],[-90,-1.394,-0.257],[-80,-1.403,-0.248],[-70,-1.375,-0.249],[-60,-1.351,-0.244],[-50,-1.332,-0.249],[-40,-1.277,-0.232],[-30,-1.149,-0.169],[-20,-1.031,-0.121],[-10,0.0,0.0],[0,1.495,4.011],[10,2.01,3.801],[20,2.223,3.828],[30,2.327,3.775],[40,2.339,3.784],[50,2.389,3.786],[60,2.386,3.802],[70,2.462,3.804],[80,2.424,3.862],[90,2.445,3.843],[100,2.429,3.837],[110,2.462,3.824],[120,2.465,3.824],[130,2.492,3.832],[140,2.464,3.85],[150,2.437,3.851],[160,2.418,3.829],[170,2.44,3.826],[180,2.445,3.859],[190,2.42,3.841],[200,2.415,3.82],[210,2.484,3.844],[220,2.444,3.86],[230,2.484,3.843],[240,2.492,3.863],[250,2.461,3.872],[260,2.46,3.86],[270,2.504,3.886],[280,2.472,3.88],[290,2.507,3.861],[300,2.483,3.86],[310,2.455,3.861],[320,2.464,3.847],[330,2.442,3.843],[340,2.452,3.855],[350,2.453,3.83],[360,2.44,3.84],[370,2.452,3.845],[380,2.469,3.839],[390,2.478,3.856],[400,2.444,3.869],[410,2.442,3.838],[420,2.449,3.844],[430,2.43,3.835],[440,2.448,3.835],[450,2.421,3.829],[460,2.456,3.835],[470,2.41,3.847],[480,2.434,3.86],[490,2.455,3.872],[500,2.487,3.865],[510,2.471,3.885],[520,2.457,3.893],[530,2.478,3.893],[540,2.463,3.893],[550,2.47,3.875],[560,2.47,3.853],[570,2.495,3.866],[580,2.47,3.851],[590,2.498,3.869],[600,2.497,3.886],[610,2.52,3.905],[620,2.539,3.919],[630,2.531,3.94],[640,2.527,3.935],[650,2.493,3.896],[660,2.476,3.892],[670,2.465,3.872],[680,2.447,3.843],[690,2.403,3.831],[700,2.419,3.834],[710,2.475,3.809],[720,2.468,3.805],[730,2.364,3.808],[740,2.42,3.78],[750,2.384,3.793],[760,2.338,3.765],[770,2.393,3.763],[780,2.391,3.768],[790,2.325,3.762],[800,2.355,3.754],[810,2.366,3.742],[820,2.327,3.722],[830,2.332,3.707],[840,2.333,3.725],[850,2.345,3.723],[860,2.323,3.73],[870,2.327,3.714],[880,2.343,3.706],[890,2.375,3.709],[900,2.335,3.716],[910,2.381,3.731],[920,2.431,3.75],[930,2.42,3.753],[940,2.435,3.771],[950,2.425,3.793],[960,2.441,3.794],[970,2.425,3.806],[980,2.433,3.816],[990,2.379,3.803],[1000,2.413,3.776]]};</script>
+<script>
+(() => {
+  const D = window.CRYPTO, DPR = Math.min(devicePixelRatio || 1, 2);
+  const COL = { text: '233,236,239', gold: '212,176,106', red: '255,107,107', blue: '122,162,255', muted: '163,170,182' };
+  function setup(c) {
+    const r = c.getBoundingClientRect(); c.width = r.width * DPR; c.height = r.height * DPR;
+    const ctx = c.getContext('2d'); ctx.setTransform(DPR, 0, 0, DPR, 0, 0); return { ctx, w: r.width, h: r.height };
+  }
+  const font = (px) => `${px}px JetBrains Mono, monospace`;
+  function axes(ctx, w, h, P, yTicks, fmt) {
+    ctx.font = font(11.5); ctx.fillStyle = `rgba(${COL.muted},.9)`; ctx.strokeStyle = 'rgba(255,255,255,.06)';
+    yTicks.forEach((v) => { const y = P.Y(v); ctx.beginPath(); ctx.moveTo(P.l, y); ctx.lineTo(w - P.r, y); ctx.stroke(); ctx.fillText(fmt(v), 8, y + 4); });
+  }
+  // 1. cross-correlation bars
+  function c1(hover) {
+    const c = document.getElementById('c1'), { ctx, w, h } = setup(c), d = D.ll10;
+    const P = { l: 52, r: 16, t: 20, b: 34 }; const lo = -0.04, hi = 0.22;
+    P.Y = (v) => P.t + (hi - v) / (hi - lo) * (h - P.t - P.b);
+    const bw = (w - P.l - P.r) / d.length;
+    axes(ctx, w, h, P, [0, 0.05, 0.1, 0.15, 0.2], (v) => v.toFixed(2));
+    ctx.fillStyle = `rgba(${COL.gold},.06)`; ctx.fillRect(P.l + bw * 51, P.t, w - P.r - (P.l + bw * 51), h - P.t - P.b);
+    d.forEach(([ms, v], i) => {
+      const x = P.l + i * bw, y0 = P.Y(0), y = P.Y(v);
+      ctx.fillStyle = i === hover ? '#fff' : ms === 0 ? `rgba(${COL.gold},.95)` : ms > 0 ? `rgba(${COL.text},.75)` : `rgba(${COL.muted},.45)`;
+      ctx.fillRect(x + 1, Math.min(y, y0), Math.max(1, bw - 2), Math.abs(y0 - y) || 1);
+    });
+    ctx.fillStyle = `rgba(${COL.muted},.9)`; ctx.font = font(11.5);
+    [-500, -250, 0, 250, 500].forEach((ms) => { const i = d.findIndex((p) => p[0] === ms); if (i >= 0) ctx.fillText(ms + ' ms', P.l + i * bw - 18, h - 12); });
+    ctx.fillStyle = `rgba(${COL.gold},.9)`; ctx.fillText('perp leads →', w - P.r - 104, P.t + 14);
+    ctx.fillStyle = `rgba(${COL.muted},.9)`; ctx.fillText('← spot leads', P.l + 8, P.t + 14);
+    c.onmousemove = (e) => { const r = c.getBoundingClientRect(), i = Math.floor((e.clientX - r.left - P.l) / bw); if (i >= 0 && i < d.length) { document.getElementById('c1-read').textContent = `lag ${d[i][0]} ms · corr ${d[i][1].toFixed(3)}`; c1(i); } };
+  }
+  // 2. lead-lag ratio by day
+  function c2(hover) {
+    const c = document.getElementById('c2'), { ctx, w, h } = setup(c), d = D.md;
+    const P = { l: 40, r: 16, t: 22, b: 34 }; const hi = 8;
+    P.Y = (v) => P.t + (hi - v) / hi * (h - P.t - P.b);
+    axes(ctx, w, h, P, [0, 2, 4, 6, 8], (v) => String(v));
+    const gw = (w - P.l - P.r) / d.length, bw = Math.min(26, gw * 0.32);
+    ctx.strokeStyle = `rgba(${COL.red},.7)`; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(P.l, P.Y(1)); ctx.lineTo(w - P.r, P.Y(1)); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = `rgba(${COL.red},.85)`; ctx.font = font(11); ctx.fillText('ratio = 1', P.l + 6, P.Y(1) + 15);
+    d.forEach((r, i) => {
+      const cx = P.l + gw * (i + 0.5);
+      ctx.fillStyle = hover === i ? '#fff' : `rgba(${COL.text},.8)`; ctx.fillRect(cx - bw - 2, P.Y(r.r100), bw, P.Y(0) - P.Y(r.r100));
+      ctx.fillStyle = hover === i ? `rgba(${COL.gold},1)` : `rgba(${COL.gold},.8)`; ctx.fillRect(cx + 2, P.Y(r.r10), bw, P.Y(0) - P.Y(r.r10));
+      ctx.fillStyle = `rgba(${COL.muted},.9)`; ctx.font = font(11.5); ctx.fillText('Nov ' + +r.d.slice(3), cx - 22, h - 12);
+    });
+    ctx.font = font(11.5); ctx.fillStyle = `rgba(${COL.text},.9)`; ctx.fillText('■ 100 ms', P.l + 8, P.t + 4); ctx.fillStyle = `rgba(${COL.gold},.9)`; ctx.fillText('■ 10 ms', P.l + 86, P.t + 4);
+    c.onmousemove = (e) => { const r = c.getBoundingClientRect(), i = Math.floor((e.clientX - r.left - P.l) / gw); if (i >= 0 && i < d.length) { document.getElementById('c2-read').textContent = `Nov ${+d[i].d.slice(3)} · ratio ${d[i].r100} (100 ms) · ${d[i].r10} (10 ms)`; c2(i); } };
+  }
+  // 3. event study paths
+  function c3(hoverMs) {
+    const c = document.getElementById('c3'), { ctx, w, h } = setup(c), d = D.ep;
+    const P = { l: 44, r: 16, t: 22, b: 34 }; const lo = -1, hi = 5, x0 = -200, x1 = 1000;
+    P.Y = (v) => P.t + (hi - v) / (hi - lo) * (h - P.t - P.b);
+    const X = (ms) => P.l + (ms - x0) / (x1 - x0) * (w - P.l - P.r);
+    axes(ctx, w, h, P, [0, 1, 2, 3, 4, 5], (v) => v + ' bp');
+    ctx.strokeStyle = `rgba(${COL.gold},.4)`; ctx.setLineDash([3, 4]); ctx.beginPath(); ctx.moveTo(X(0), P.t); ctx.lineTo(X(0), h - P.b); ctx.stroke(); ctx.setLineDash([]);
+    const line = (k, col, wd) => { ctx.strokeStyle = col; ctx.lineWidth = wd; ctx.beginPath(); d.forEach((p, i) => (i ? ctx.lineTo(X(p[0]), P.Y(p[k])) : ctx.moveTo(X(p[0]), P.Y(p[k])))); ctx.stroke(); ctx.lineWidth = 1; };
+    line(1, `rgba(${COL.text},.9)`, 2); line(2, `rgba(${COL.gold},.95)`, 2);
+    ctx.font = font(11.5); ctx.fillStyle = `rgba(${COL.text},.9)`; ctx.fillText('perpetual', X(620), P.Y(4.45)); ctx.fillStyle = `rgba(${COL.gold},.95)`; ctx.fillText('spot', X(620), P.Y(3.2));
+    ctx.fillStyle = `rgba(${COL.muted},.9)`; [-200, 0, 200, 400, 600, 800, 1000].forEach((ms) => ctx.fillText(ms + ' ms', X(ms) - 18, h - 12));
+    if (hoverMs !== undefined) { const p = d.find((q) => q[0] === hoverMs); if (p) { ctx.strokeStyle = 'rgba(255,255,255,.3)'; ctx.beginPath(); ctx.moveTo(X(p[0]), P.t); ctx.lineTo(X(p[0]), h - P.b); ctx.stroke(); } }
+    c.onmousemove = (e) => { const r = c.getBoundingClientRect(), ms = Math.round(((e.clientX - r.left - P.l) / (w - P.l - P.r) * (x1 - x0) + x0) / 10) * 10; const p = d.find((q) => q[0] === ms); if (p) { document.getElementById('c3-read').textContent = `${ms} ms · perp ${p[1].toFixed(2)} bp · spot ${p[2].toFixed(2)} bp`; c3(ms); } };
+  }
+  const all = () => { c1(); c2(); c3(); };
+  (document.fonts ? document.fonts.ready : Promise.resolve()).then(all);
+  addEventListener('resize', all);
+})();
+</script>
+</body>
+</html>
