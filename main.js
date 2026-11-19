@@ -240,7 +240,7 @@ addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimat
       const n = nodes[hover], p = n.p[period] || { net: 0 };
       const role = p.net > 0.08 ? 'net emitter' : p.net < -0.08 ? 'net receiver' : 'balanced';
       ctx.fillStyle = '#fff'; ctx.font = '13px JetBrains Mono, monospace';
-      ctx.fillText(`${n.t} — ${role}`, 18, 26);
+      ctx.fillText(`${n.t} · ${role}`, 18, 26);
     }
     // auto-cycle progress bar
     if (auto && born) { ctx.fillStyle = 'rgba(212,176,106,.5)'; ctx.fillRect(0, h - 2, w * clamp((now - lastSwitch) / 6500, 0, 1), 2); }
