@@ -122,7 +122,6 @@ addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimat
     const lastT = hp[0];
     const note = (t, y, txt, col, dx = 8, dy = -10) => { if (lastT < t) return; ctx.fillStyle = col; const tw = ctx.measureText(txt).width; ctx.fillText(txt, Math.min(G.X(t) + dx, w - G.r - tw), G.Y(y) + dy); };
     note(2020.2, 96.6, 'COVID-19: jump to ~95%', 'rgba(255,107,107,.9)', 10, 0);
-    note(2023.3, 92.9, 'settles above pre-2019 levels', 'rgba(233,236,239,.75)', 8, -14);
     // hover crosshair
     if (hoverI >= 0) {
       const p = data[hoverI], x = G.X(p[0]), y = G.Y(p[1]);
